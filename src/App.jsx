@@ -1,59 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
+import { loadOrCreateIndex, saveIndex } from './drive'
 import './App.css'
-
-const sampleRecords = [
-  {
-    id: 'rec_001',
-    name: 'Toyota Tacoma Insurance',
-    category: 'vehicle',
-    expiresAt: '2026-04-15',
-    urgency: 'overdue',
-    parries: { total: 3, used: 3 },
-    tags: ['toyota', 'progressive'],
-    sensitive: true,
-  },
-  {
-    id: 'rec_002',
-    name: 'Home Insurance Policy',
-    category: 'insurance',
-    expiresAt: '2026-05-01',
-    urgency: 'warning',
-    parries: { total: 3, used: 1 },
-    tags: ['homeowners', 'allstate'],
-    sensitive: false,
-  },
-  {
-    id: 'rec_003',
-    name: "Luna's Rabies Vaccine",
-    category: 'pet',
-    expiresAt: '2026-06-15',
-    urgency: 'warning',
-    parries: { total: 3, used: 0 },
-    tags: ['luna', 'vet'],
-    sensitive: false,
-  },
-  {
-    id: 'rec_004',
-    name: 'Passport — Nikki',
-    category: 'identity',
-    expiresAt: '2029-03-22',
-    urgency: 'clear',
-    parries: { total: 3, used: 0 },
-    tags: ['travel'],
-    sensitive: true,
-  },
-  {
-    id: 'rec_005',
-    name: 'Toyota Tacoma Registration',
-    category: 'vehicle',
-    expiresAt: '2027-01-10',
-    urgency: 'clear',
-    parries: { total: 3, used: 0 },
-    tags: ['toyota'],
-    sensitive: false,
-  },
-]
 
 function ParryDots({ total, used }) {
   return (
@@ -78,14 +26,17 @@ function RecordCard({ record }) {
         </div>
         <div className="record-meta">
           <span className="record-category">{record.category}</span>
-          {record.tags.map(tag => (
+          {record.tags && record.tags.map(tag => (
             <span key={tag} className="record-tag">/{tag}</span>
           ))}
         </div>
       </div>
       <div className="record-card-right">
         <div className="record-date">{record.expiresAt}</div>
-        <ParryDots total={record.parries.total} used={record.parries.used} />
+        <ParryDots
+          total={record.parries?.total || 3}
+          used={record.parries?.used || 0}
+        />
       </div>
     </div>
   )
@@ -117,8 +68,23 @@ function LoginScreen({ onLogin }) {
   )
 }
 
+function LoadingScreen() {
+  return (
+    <div className="login-screen">
+      <div className="login-card">
+        <div className="wordmark">duelist</div>
+        <div className="tagline">--- stay sharp ---</div>
+        <p className="login-description">loading your vault...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [user, setUser] = useState(null)
+  const [index, setIndex] = useState(null)
+  const [fileId, setFileId] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const login = useGoogleLogin({
     onSuccess: (response) => setUser(response),
@@ -126,13 +92,30 @@ export default function App() {
     scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
   })
 
-  const overdue = sampleRecords.filter(r => r.urgency === 'overdue')
-  const warning = sampleRecords.filter(r => r.urgency === 'warning')
-  const clear = sampleRecords.filter(r => r.urgency === 'clear')
+  useEffect(() => {
+    if (user) {
+      setLoading(true)
+      loadOrCreateIndex(user.access_token)
+        .then(({ index, fileId }) => {
+          setIndex(index)
+          setFileId(fileId)
+          setLoading(false)
+        })
+        .catch(err => {
+          console.error('Failed to load index:', err)
+          setLoading(false)
+        })
+    }
+  }, [user])
 
-  if (!user) {
-    return <LoginScreen onLogin={login} />
-  }
+  if (!user) return <LoginScreen onLogin={login} />
+  if (loading) return <LoadingScreen />
+  if (!index) return <LoadingScreen />
+
+  const records = index.records || []
+  const overdue = records.filter(r => r.urgency === 'overdue')
+  const warning = records.filter(r => r.urgency === 'warning')
+  const clear = records.filter(r => r.urgency === 'clear')
 
   return (
     <div className="app">
@@ -142,11 +125,22 @@ export default function App() {
             <div className="wordmark">duelist</div>
             <div className="tagline">--- stay sharp ---</div>
           </div>
-          <button className="signout-btn" onClick={() => setUser(null)}>sign out</button>
+          <button className="signout-btn" onClick={() => {
+            setUser(null)
+            setIndex(null)
+            setFileId(null)
+          }}>sign out</button>
         </div>
       </header>
 
       <main className="dashboard">
+        {records.length === 0 && (
+          <div className="empty-state">
+            <p className="empty-title">your vault is empty</p>
+            <p className="empty-subtitle">tap + to vault your first record</p>
+          </div>
+        )}
+
         {overdue.length > 0 && (
           <section className="urgency-section">
             <div className="urgency-banner overdue-banner">
@@ -179,3 +173,8 @@ export default function App() {
     </div>
   )
 }
+
+
+
+
+
