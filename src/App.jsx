@@ -1,121 +1,137 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+const sampleRecords = [
+  {
+    id: 'rec_001',
+    name: 'Toyota Tacoma Insurance',
+    category: 'vehicle',
+    expiresAt: '2026-04-15',
+    urgency: 'overdue',
+    parries: { total: 3, used: 3 },
+    tags: ['toyota', 'progressive'],
+    sensitive: true,
+  },
+  {
+    id: 'rec_002',
+    name: 'Home Insurance Policy',
+    category: 'insurance',
+    expiresAt: '2026-05-01',
+    urgency: 'warning',
+    parries: { total: 3, used: 1 },
+    tags: ['homeowners', 'allstate'],
+    sensitive: false,
+  },
+  {
+    id: 'rec_003',
+    name: "Luna's Rabies Vaccine",
+    category: 'pet',
+    expiresAt: '2026-06-15',
+    urgency: 'warning',
+    parries: { total: 3, used: 0 },
+    tags: ['luna', 'vet'],
+    sensitive: false,
+  },
+  {
+    id: 'rec_004',
+    name: 'Passport — Nikki',
+    category: 'identity',
+    expiresAt: '2029-03-22',
+    urgency: 'clear',
+    parries: { total: 3, used: 0 },
+    tags: ['travel'],
+    sensitive: true,
+  },
+  {
+    id: 'rec_005',
+    name: 'Toyota Tacoma Registration',
+    category: 'vehicle',
+    expiresAt: '2027-01-10',
+    urgency: 'clear',
+    parries: { total: 3, used: 0 },
+    tags: ['toyota'],
+    sensitive: false,
+  },
+]
 
+function ParryDots({ total, used }) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div className="parry-dots">
+      {Array.from({ length: total }).map((_, i) => (
+        <span
+          key={i}
+          className={`parry-dot ${i < (total - used) ? 'active' : 'used'}`}
+        />
+      ))}
+    </div>
   )
 }
 
-export default App
+function RecordCard({ record }) {
+  return (
+    <div className={`record-card urgency-${record.urgency}`}>
+      <div className="record-card-left">
+        <div className="record-name">
+          {record.name}
+          {record.sensitive && <span className="lock-icon">🔒</span>}
+        </div>
+        <div className="record-meta">
+          <span className="record-category">{record.category}</span>
+          {record.tags.map(tag => (
+            <span key={tag} className="record-tag">/{tag}</span>
+          ))}
+        </div>
+      </div>
+      <div className="record-card-right">
+        <div className="record-date">{record.expiresAt}</div>
+        <ParryDots total={record.parries.total} used={record.parries.used} />
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  const overdue = sampleRecords.filter(r => r.urgency === 'overdue')
+  const warning = sampleRecords.filter(r => r.urgency === 'warning')
+  const clear = sampleRecords.filter(r => r.urgency === 'clear')
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="wordmark">duelist</div>
+        <div className="tagline">--- stay sharp ---</div>
+      </header>
+
+      <main className="dashboard">
+        {overdue.length > 0 && (
+          <section className="urgency-section">
+            <div className="urgency-banner overdue-banner">
+              no parries left — {overdue.length} record{overdue.length > 1 ? 's' : ''} overdue
+            </div>
+            {overdue.map(r => <RecordCard key={r.id} record={r} />)}
+          </section>
+        )}
+
+        {warning.length > 0 && (
+          <section className="urgency-section">
+            <div className="urgency-banner warning-banner">
+              coming up — {warning.length} record{warning.length > 1 ? 's' : ''} expiring soon
+            </div>
+            {warning.map(r => <RecordCard key={r.id} record={r} />)}
+          </section>
+        )}
+
+        {clear.length > 0 && (
+          <section className="urgency-section">
+            <div className="urgency-banner clear-banner">
+              all clear — {clear.length} record{clear.length > 1 ? 's' : ''} in good shape
+            </div>
+            {clear.map(r => <RecordCard key={r.id} record={r} />)}
+          </section>
+        )}
+      </main>
+
+      <button className="fab">+</button>
+    </div>
+  )
+}
